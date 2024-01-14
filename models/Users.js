@@ -10,7 +10,11 @@ const userSchema = mongoose.Schema({
     required: true,
     unique: true,
   },
+  image: {
+    type: String,
+    required: true,
+  },
 });
 
-const Users = mongoose.model("User", userSchema);
+const Users = mongoose.model("user", userSchema);
 module.exports = Users;

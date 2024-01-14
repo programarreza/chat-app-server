@@ -1,4 +1,6 @@
 const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -11,6 +13,8 @@ const Conversations = require("./models/Conversations");
 const Messages = require("./models/Messages");
 
 // middleware
+app.use(cors());
+app.use(bodyParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -19,15 +23,28 @@ app.get("/", (req, res) => {
   res.send("chat app server is running!");
 });
 
-// user info
+// users info
 app.post("/api/users", async (req, res) => {
+  console.log(req.body);
   try {
-    const { fullName, email } = req.body;
-    const newUser = new Users({ fullName, email });
+    const { fullName, email, image } = req.body;
+    const newUser = new Users({ fullName, email, image });
     newUser.save();
     res.send(newUser);
   } catch (error) {
     console.log(error, "Error");
+  }
+});
+
+// get single user
+app.get("/api/user/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+    console.log(email);
+    const user = await Users.findOne({ email: email });
+    res.json(user);
+  } catch (error) {
+    console.log("Error", error);
   }
 });
 
@@ -44,7 +61,7 @@ app.post("/api/conversation", async (req, res) => {
   }
 });
 
-app.get("/api/conversation/:userId", async (req, res) => {
+app.get("/api/conversations/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
     const conversations = await Conversations.find({
@@ -72,8 +89,9 @@ app.get("/api/conversation/:userId", async (req, res) => {
 // send message
 app.post("/api/message", async (req, res) => {
   try {
-    const { conversationId, senderId, message, receiverId= '' } = req.body;
-    if (!senderId || !message) return res.status(400).send("Please Fill all required fields");
+    const { conversationId, senderId, message, receiverId = "" } = req.body;
+    if (!senderId || !message)
+      return res.status(400).send("Please Fill all required fields");
 
     if (!conversationId && receiverId) {
       const newConversation = new Conversations({
@@ -85,12 +103,12 @@ app.post("/api/message", async (req, res) => {
         senderId,
         message,
       });
-      await newMessage.save()
-      return res.status(200).send("Message send Successfully ")
-    }else if(!conversationId && !receiverId){
-      return res.status(400).send('Please fill all require fields')
+      await newMessage.save();
+      return res.status(200).send("Message send Successfully ");
+    } else if (!conversationId && !receiverId) {
+      return res.status(400).send("Please fill all require fields");
     }
-    
+
     const newMessage = new Messages({ conversationId, senderId, message });
     await newMessage.save();
     res.status(200).send("Message send Successfully");
@@ -103,7 +121,7 @@ app.post("/api/message", async (req, res) => {
 app.get("/api/message/:conversationId", async (req, res) => {
   try {
     const conversationId = req.params.conversationId;
-    if (conversationId === 'new') return res.status(200).json([]);
+    if (conversationId === "new") return res.status(200).json([]);
     const messages = await Messages.find({ conversationId });
     const messageUserData = Promise.all(
       messages.map(async (message) => {
