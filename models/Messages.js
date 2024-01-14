@@ -8,8 +8,8 @@ const messageSchema = mongoose.Schema({
     type: String,
   },
   message: {
-    type: String,
-  },
+	type: String,
+  }
 });
 
 const Messages = mongoose.model("Message", messageSchema);
